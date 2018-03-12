@@ -20,6 +20,7 @@ import org.reactnative.camera.tasks.ResolveTakenPictureAsyncTask;
 import org.reactnative.camera.utils.ScopedContext;
 import org.reactnative.facedetector.RNFaceDetector;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.nio.ByteBuffer;
 import java.util.Collections;
@@ -201,9 +202,10 @@ public class CameraModule extends ReactContextBaseJavaModule {
                 }
               } else {
                   Bitmap image = RNCameraViewHelper.generateSimulatorPhoto(cameraView.getWidth(), cameraView.getHeight());
-                  ByteBuffer byteBuffer = ByteBuffer.allocate(image.getRowBytes() * image.getHeight());
-                  image.copyPixelsToBuffer(byteBuffer);
-                  new ResolveTakenPictureAsyncTask(byteBuffer.array(), promise, options).execute();
+                  ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                  image.compress(Bitmap.CompressFormat.PNG, 100, stream);
+                  byte[] byteArray = stream.toByteArray();
+                  new ResolveTakenPictureAsyncTask(byteArray, promise, options).execute();
               }
         } catch (Exception e) {
           promise.reject("E_CAMERA_BAD_VIEWTAG", "takePictureAsync: Expected a Camera component");

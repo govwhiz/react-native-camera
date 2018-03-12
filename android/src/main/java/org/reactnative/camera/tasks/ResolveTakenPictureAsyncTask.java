@@ -9,13 +9,13 @@ import android.os.AsyncTask;
 import android.support.media.ExifInterface;
 import android.util.Base64;
 
-import org.reactnative.camera.RNCameraViewHelper;
-import org.reactnative.camera.utils.RNFileUtils;
-
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableMap;
+
+import org.reactnative.camera.RNCameraViewHelper;
+import org.reactnative.camera.utils.RNFileUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -94,11 +94,13 @@ public class ResolveTakenPictureAsyncTask extends AsyncTask<Void, Void, Writable
             ByteArrayOutputStream imageStream = new ByteArrayOutputStream();
             mBitmap.compress(Bitmap.CompressFormat.JPEG, getQuality(), imageStream);
 
-            // Write compressed image to file in cache directory
-            String filePath = writeStreamToFile(imageStream);
-            File imageFile = new File(filePath);
-            String fileUri = Uri.fromFile(imageFile).toString();
-            response.putString("uri", fileUri);
+            if (mCacheDirectory != null) {
+                // Write compressed image to file in cache directory
+                String filePath = writeStreamToFile(imageStream);
+                File imageFile = new File(filePath);
+                String fileUri = Uri.fromFile(imageFile).toString();
+                response.putString("uri", fileUri);
+            }
 
             // Write base64-encoded image to the response if requested
             if (mOptions.hasKey("base64") && mOptions.getBoolean("base64")) {
@@ -143,7 +145,7 @@ public class ResolveTakenPictureAsyncTask extends AsyncTask<Void, Void, Writable
         int width = bm.getWidth();
         int height = bm.getHeight();
         float scaleRatio = (float) newWidth / (float) width;
-    
+
         return Bitmap.createScaledBitmap(bm, newWidth, (int) (height * scaleRatio), true);
     }
 
@@ -158,15 +160,15 @@ public class ResolveTakenPictureAsyncTask extends AsyncTask<Void, Void, Writable
     private int getImageRotation(int orientation) {
         int rotationDegrees = 0;
         switch (orientation) {
-        case ExifInterface.ORIENTATION_ROTATE_90:
-            rotationDegrees = 90;
-            break;
-        case ExifInterface.ORIENTATION_ROTATE_180:
-            rotationDegrees = 180;
-            break;
-        case ExifInterface.ORIENTATION_ROTATE_270:
-            rotationDegrees = 270;
-            break;
+            case ExifInterface.ORIENTATION_ROTATE_90:
+                rotationDegrees = 90;
+                break;
+            case ExifInterface.ORIENTATION_ROTATE_180:
+                rotationDegrees = 180;
+                break;
+            case ExifInterface.ORIENTATION_ROTATE_270:
+                rotationDegrees = 270;
+                break;
         }
         return rotationDegrees;
     }

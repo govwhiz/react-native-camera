@@ -14,9 +14,6 @@ import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableMap;
 
-import org.reactnative.camera.RNCameraViewHelper;
-import org.reactnative.camera.utils.RNFileUtils;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -91,7 +88,7 @@ public class ResolveTakenPictureAsyncTask extends AsyncTask<Void, Void, Writable
                 if (mOptions.hasKey("fixOrientation") && mOptions.getBoolean("fixOrientation") && orientation != ExifInterface.ORIENTATION_UNDEFINED) {
                     mBitmap = rotateBitmap(mBitmap, getImageRotation(orientation));
                 }
-                
+
                 if (mOptions.hasKey("width")) {
                     mBitmap = resizeBitmap(mBitmap, mOptions.getInt("width"));
                 }
@@ -115,12 +112,15 @@ public class ResolveTakenPictureAsyncTask extends AsyncTask<Void, Void, Writable
             ByteArrayOutputStream imageStream = new ByteArrayOutputStream();
             mBitmap.compress(Bitmap.CompressFormat.JPEG, getQuality(), imageStream);
 
-            if (mCacheDirectory != null) {
-                // Write compressed image to file in cache directory
-                String filePath = writeStreamToFile(imageStream);
-                File imageFile = new File(filePath);
-                String fileUri = Uri.fromFile(imageFile).toString();
-                response.putString("uri", fileUri);
+            if (!mOptions.hasKey("doNotSave") || !mOptions.getBoolean("doNotSave")) {
+                if(mCacheDirectory != null){
+                    // Write compressed image to file in cache directory
+                    String filePath = writeStreamToFile(imageStream);
+                    File imageFile = new File(filePath);
+                    String fileUri = Uri.fromFile(imageFile).toString();
+                    response.putString("uri", fileUri);
+                }
+
             }
 
             // Write base64-encoded image to the response if requested
@@ -181,15 +181,15 @@ public class ResolveTakenPictureAsyncTask extends AsyncTask<Void, Void, Writable
     private int getImageRotation(int orientation) {
         int rotationDegrees = 0;
         switch (orientation) {
-            case ExifInterface.ORIENTATION_ROTATE_90:
-                rotationDegrees = 90;
-                break;
-            case ExifInterface.ORIENTATION_ROTATE_180:
-                rotationDegrees = 180;
-                break;
-            case ExifInterface.ORIENTATION_ROTATE_270:
-                rotationDegrees = 270;
-                break;
+        case ExifInterface.ORIENTATION_ROTATE_90:
+            rotationDegrees = 90;
+            break;
+        case ExifInterface.ORIENTATION_ROTATE_180:
+            rotationDegrees = 180;
+            break;
+        case ExifInterface.ORIENTATION_ROTATE_270:
+            rotationDegrees = 270;
+            break;
         }
         return rotationDegrees;
     }

@@ -66,10 +66,11 @@ type TrackedTextFeature = {
 type RecordingOptions = {
   maxDuration?: number,
   maxFileSize?: number,
+  orientation?: Orientation,
   quality?: number | string,
   codec?: string,
   mute?: boolean,
-  path?: string
+  path?: string,
 };
 
 type EventCallbackArgumentsType = {
@@ -204,6 +205,7 @@ export default class Camera extends React.Component<PropsType, StateType> {
     playSoundOnCapture: PropTypes.bool,
     videoStabilizationMode: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     pictureSize: PropTypes.string,
+    mirrorVideo: PropTypes.bool,
   };
 
   static defaultProps: Object = {
@@ -237,6 +239,7 @@ export default class Camera extends React.Component<PropsType, StateType> {
     playSoundOnCapture: false,
     pictureSize: 'None',
     videoStabilizationMode: 0,
+    mirrorVideo: false,
   };
 
   _cameraRef: ?Object;
@@ -285,6 +288,9 @@ export default class Camera extends React.Component<PropsType, StateType> {
     } else if (typeof options.quality === 'string') {
       options.quality = Camera.Constants.VideoQuality[options.quality];
     }
+    if (typeof options.orientation=== 'string') {
+      options.orientation = CameraManager.Orientation[options.orientation];
+    }
     return await CameraManager.record(options, this._cameraHandle);
   }
 
@@ -312,7 +318,7 @@ export default class Camera extends React.Component<PropsType, StateType> {
     }
   };
 
-  _onPictureSaved = ({ nativeEvent }) => {
+  _onPictureSaved = ({ nativeEvent }: EventCallbackArgumentsType) => {
     if (this.props.onPictureSaved) {
       this.props.onPictureSaved(nativeEvent);
     }
@@ -347,6 +353,7 @@ export default class Camera extends React.Component<PropsType, StateType> {
     }
   };
 
+  // eslint-disable-next-line
   async componentWillMount() {
     const hasVideoAndAudio = this.props.captureAudio;
     const isAuthorized = await requestPermissions(
@@ -427,7 +434,6 @@ export default class Camera extends React.Component<PropsType, StateType> {
       delete newProps.googleVisionBarcodeType;
       delete newProps.googleVisionBarcodeDetectorEnabled;
       delete newProps.ratio;
-      delete newProps.textRecognizerEnabled;
     }
 
     return newProps;

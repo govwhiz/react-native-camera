@@ -14,6 +14,9 @@ import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableMap;
 
+import org.reactnative.camera.RNCameraViewHelper;
+import org.reactnative.camera.utils.RNFileUtils;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -45,13 +48,13 @@ public class ResolveTakenPictureAsyncTask extends AsyncTask<Void, Void, Writable
     protected WritableMap doInBackground(Void... voids) {
         WritableMap response = Arguments.createMap();
         ByteArrayInputStream inputStream = null;
-
+        FileOutputStream fOut=null;
         if (mOptions.hasKey("skipProcessing")) {
             try {
                 // Prepare file output
                 File imageFile = new File(RNFileUtils.getOutputFilePath(mCacheDirectory, ".jpg"));
                 imageFile.createNewFile();
-                FileOutputStream fOut = new FileOutputStream(imageFile);
+                 fOut = new FileOutputStream(imageFile);
 
                 // Save byte array (it is already a JPEG)
                 fOut.write(mImageData);
@@ -66,6 +69,15 @@ public class ResolveTakenPictureAsyncTask extends AsyncTask<Void, Void, Writable
             } catch (IOException e) {
                 mPromise.reject(ERROR_TAG, "An unknown I/O exception has occurred.", e);
                 e.printStackTrace();
+            }finally {
+                if (fOut!=null){
+                    try {
+                        fOut.close();
+                    } catch (IOException e) {
+                        mPromise.reject(ERROR_TAG, e.getMessage(), e);
+                        e.printStackTrace();
+                    }
+                }
             }
 
             return response;

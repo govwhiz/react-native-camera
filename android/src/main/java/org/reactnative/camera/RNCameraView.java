@@ -10,6 +10,7 @@ import android.os.Build;
 import android.support.v4.content.ContextCompat;
 import android.util.SparseArray;
 import android.view.View;
+import android.os.AsyncTask;
 import com.facebook.react.bridge.*;
 import com.facebook.react.uimanager.ThemedReactContext;
 import com.google.android.cameraview.CameraView;
@@ -45,6 +46,7 @@ public class RNCameraView extends CameraView implements LifecycleEventListener, 
 
   private boolean mIsPaused = false;
   private boolean mIsNew = true;
+  private boolean invertImageData = false;
 
   // Concurrency lock for scanners to avoid flooding the runtime
   public volatile boolean barCodeScannerTaskLock = false;
@@ -65,6 +67,7 @@ public class RNCameraView extends CameraView implements LifecycleEventListener, 
   private int mFaceDetectionLandmarks = RNFaceDetector.NO_LANDMARKS;
   private int mFaceDetectionClassifications = RNFaceDetector.NO_CLASSIFICATIONS;
   private int mGoogleVisionBarCodeType = Barcode.ALL_FORMATS;
+  private int mGoogleVisionBarCodeMode = RNBarcodeDetector.NORMAL_MODE;
 
   public RNCameraView(ThemedReactContext themedReactContext) {
     super(themedReactContext, true);
@@ -83,21 +86,30 @@ public class RNCameraView extends CameraView implements LifecycleEventListener, 
       }
 
       @Override
-      public void onPictureTaken(CameraView cameraView, final byte[] data) {
+      public void onPictureTaken(CameraView cameraView, final byte[] data, int deviceOrientation) {
         Promise promise = mPictureTakenPromises.poll();
         ReadableMap options = mPictureTakenOptions.remove(promise);
         if (options.hasKey("fastMode") && options.getBoolean("fastMode")) {
             promise.resolve(null);
         }
         final File cacheDirectory = mPictureTakenDirectories.remove(promise);
-        new ResolveTakenPictureAsyncTask(data, promise, options, cacheDirectory, RNCameraView.this).execute();
+        if(Build.VERSION.SDK_INT >= 11/*HONEYCOMB*/) {
+          new ResolveTakenPictureAsyncTask(data, promise, options, cacheDirectory, deviceOrientation, RNCameraView.this)
+                  .executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        } else {
+          new ResolveTakenPictureAsyncTask(data, promise, options, cacheDirectory, deviceOrientation, RNCameraView.this)
+                  .execute();
+        }
+        RNCameraViewHelper.emitPictureTakenEvent(cameraView);
       }
 
       @Override
-      public void onVideoRecorded(CameraView cameraView, String path) {
+      public void onVideoRecorded(CameraView cameraView, String path, int videoOrientation, int deviceOrientation) {
         if (mVideoRecordedPromise != null) {
           if (path != null) {
             WritableMap result = Arguments.createMap();
+            result.putInt("videoOrientation", videoOrientation);
+            result.putInt("deviceOrientation", deviceOrientation);
             result.putString("uri", RNFileUtils.uriFromFile(new File(path)).toString());
             mVideoRecordedPromise.resolve(result);
           } else {
@@ -109,13 +121,17 @@ public class RNCameraView extends CameraView implements LifecycleEventListener, 
 
       @Override
       public void onFramePreview(CameraView cameraView, byte[] data, int width, int height, int rotation) {
-        int correctRotation = RNCameraViewHelper.getCorrectCameraRotation(rotation, getFacing());
+        int correctRotation = RNCameraViewHelper.getCorrectCameraRotation(rotation, getFacing(), getCameraOrientation());
         boolean willCallBarCodeTask = mShouldScanBarCodes && !barCodeScannerTaskLock && cameraView instanceof BarCodeScannerAsyncTaskDelegate;
         boolean willCallFaceTask = mShouldDetectFaces && !faceDetectorTaskLock && cameraView instanceof FaceDetectorAsyncTaskDelegate;
         boolean willCallGoogleBarcodeTask = mShouldGoogleDetectBarcodes && !googleBarcodeDetectorTaskLock && cameraView instanceof BarcodeDetectorAsyncTaskDelegate;
         boolean willCallTextTask = mShouldRecognizeText && !textRecognizerTaskLock && cameraView instanceof TextRecognizerAsyncTaskDelegate;
         if (!willCallBarCodeTask && !willCallFaceTask && !willCallGoogleBarcodeTask && !willCallTextTask) {
           return;
+        }
+
+        if (data.length < (1.5 * width * height)) {
+            return;
         }
 
         if (willCallBarCodeTask) {
@@ -132,6 +148,18 @@ public class RNCameraView extends CameraView implements LifecycleEventListener, 
 
         if (willCallGoogleBarcodeTask) {
           googleBarcodeDetectorTaskLock = true;
+          if (mGoogleVisionBarCodeMode == RNBarcodeDetector.NORMAL_MODE) {
+            invertImageData = false;
+          } else if (mGoogleVisionBarCodeMode == RNBarcodeDetector.ALTERNATE_MODE) {
+            invertImageData = !invertImageData;
+          } else if (mGoogleVisionBarCodeMode == RNBarcodeDetector.INVERTED_MODE) {
+            invertImageData = true;
+          }
+          if (invertImageData) {
+            for (int y = 0; y < data.length; y++) {
+              data[y] = (byte) ~data[y];
+            }
+          }
           BarcodeDetectorAsyncTaskDelegate delegate = (BarcodeDetectorAsyncTaskDelegate) cameraView;
           new BarcodeDetectorAsyncTask(delegate, mGoogleBarcodeDetector, data, width, height, correctRotation).execute();
         }
@@ -186,15 +214,6 @@ public class RNCameraView extends CameraView implements LifecycleEventListener, 
     // React handles this for us, so we don't need to call super.requestLayout();
   }
 
-  @Override
-  public void onViewAdded(View child) {
-    if (this.getView() == child || this.getView() == null) return;
-    // remove and read view to make sure it is in the back.
-    // @TODO figure out why there was a z order issue in the first place and fix accordingly.
-    this.removeView(this.getView());
-    this.addView(this.getView(), 0);
-  }
-
   public void setBarCodeTypes(List<String> barCodeTypes) {
     mBarCodeTypes = barCodeTypes;
     initBarcodeReader();
@@ -213,7 +232,7 @@ public class RNCameraView extends CameraView implements LifecycleEventListener, 
       sound.play(MediaActionSound.SHUTTER_CLICK);
     }
     try {
-      super.takePicture();
+      super.takePicture(options);
     } catch (Exception e) {
       mPictureTakenPromises.remove(promise);
       mPictureTakenOptions.remove(promise);
@@ -221,7 +240,7 @@ public class RNCameraView extends CameraView implements LifecycleEventListener, 
       throw e;
     }
   }
-        
+
   @Override
   public void onPictureSaved(WritableMap response) {
     RNCameraViewHelper.emitPictureSavedEvent(this, response);
@@ -237,10 +256,21 @@ public class RNCameraView extends CameraView implements LifecycleEventListener, 
       if (options.hasKey("quality")) {
         profile = RNCameraViewHelper.getCamcorderProfile(options.getInt("quality"));
       }
+      if (options.hasKey("videoBitrate")) {
+        profile.videoBitRate = options.getInt("videoBitrate");
+      }
 
-      boolean recordAudio = !options.hasKey("mute");
+      boolean recordAudio = true;
+      if (options.hasKey("mute")) {
+        recordAudio = !options.getBoolean("mute");
+      }
 
-      if (super.record(path, maxDuration * 1000, maxFileSize, recordAudio, profile)) {
+      int orientation = Constants.ORIENTATION_AUTO;
+      if (options.hasKey("orientation")) {
+        orientation = options.getInt("orientation");
+      }
+
+      if (super.record(path, maxDuration * 1000, maxFileSize, recordAudio, profile, orientation)) {
         mVideoRecordedPromise = promise;
       } else {
         promise.reject("E_RECORDING_FAILED", "Starting video recording failed. Another recording might be in progress.");
@@ -281,18 +311,20 @@ public class RNCameraView extends CameraView implements LifecycleEventListener, 
     setScanning(mShouldDetectFaces || mShouldGoogleDetectBarcodes || mShouldScanBarCodes || mShouldRecognizeText);
   }
 
-  public void onBarCodeRead(Result barCode) {
+  public void onBarCodeRead(Result barCode, int width, int height) {
     String barCodeType = barCode.getBarcodeFormat().toString();
     if (!mShouldScanBarCodes || !mBarCodeTypes.contains(barCodeType)) {
       return;
     }
 
-    RNCameraViewHelper.emitBarCodeReadEvent(this, barCode);
+    RNCameraViewHelper.emitBarCodeReadEvent(this, barCode,  width,  height);
   }
 
   public void onBarCodeScanningTaskCompleted() {
     barCodeScannerTaskLock = false;
-    mMultiFormatReader.reset();
+    if(mMultiFormatReader != null) {
+      mMultiFormatReader.reset();
+    }
   }
 
   /**
@@ -387,6 +419,10 @@ public class RNCameraView extends CameraView implements LifecycleEventListener, 
     if (mGoogleBarcodeDetector != null) {
       mGoogleBarcodeDetector.setBarcodeType(barcodeType);
     }
+  }
+
+  public void setGoogleVisionBarcodeMode(int barcodeMode) {
+    mGoogleVisionBarCodeMode = barcodeMode;
   }
 
   public void onBarcodesDetected(SparseArray<Barcode> barcodesReported, int sourceWidth, int sourceHeight, int sourceRotation) {

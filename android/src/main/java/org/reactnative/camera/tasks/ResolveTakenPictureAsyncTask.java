@@ -30,13 +30,15 @@ public class ResolveTakenPictureAsyncTask extends AsyncTask<Void, Void, Writable
     private ReadableMap mOptions;
     private File mCacheDirectory;
     private Bitmap mBitmap;
+    private int mDeviceOrientation;
     private PictureSavedDelegate mPictureSavedDelegate;
 
-    public ResolveTakenPictureAsyncTask(byte[] imageData, Promise promise, ReadableMap options, File cacheDirectory, PictureSavedDelegate delegate) {
+    public ResolveTakenPictureAsyncTask(byte[] imageData, Promise promise, ReadableMap options, File cacheDirectory, int deviceOrientation, PictureSavedDelegate delegate) {
         mPromise = promise;
         mOptions = options;
         mImageData = imageData;
         mCacheDirectory = cacheDirectory;
+        mDeviceOrientation = deviceOrientation;
         mPictureSavedDelegate = delegate;
     }
 
@@ -48,6 +50,9 @@ public class ResolveTakenPictureAsyncTask extends AsyncTask<Void, Void, Writable
     protected WritableMap doInBackground(Void... voids) {
         WritableMap response = Arguments.createMap();
         ByteArrayInputStream inputStream = null;
+
+        response.putInt("deviceOrientation", mDeviceOrientation);
+        response.putInt("pictureOrientation", mOptions.hasKey("orientation") ? mOptions.getInt("orientation") : mDeviceOrientation);
 
         if (mOptions.hasKey("skipProcessing")) {
             try {
@@ -91,7 +96,7 @@ public class ResolveTakenPictureAsyncTask extends AsyncTask<Void, Void, Writable
                 if (mOptions.hasKey("fixOrientation") && mOptions.getBoolean("fixOrientation") && orientation != ExifInterface.ORIENTATION_UNDEFINED) {
                     mBitmap = rotateBitmap(mBitmap, getImageRotation(orientation));
                 }
-                
+
                 if (mOptions.hasKey("width")) {
                     mBitmap = resizeBitmap(mBitmap, mOptions.getInt("width"));
                 }
@@ -115,8 +120,8 @@ public class ResolveTakenPictureAsyncTask extends AsyncTask<Void, Void, Writable
             ByteArrayOutputStream imageStream = new ByteArrayOutputStream();
             mBitmap.compress(Bitmap.CompressFormat.JPEG, getQuality(), imageStream);
 
-            if (mCacheDirectory != null) {
-                // Write compressed image to file in cache directory
+            // Write compressed image to file in cache directory unless otherwise specified
+            if (!mOptions.hasKey("doNotSave") || !mOptions.getBoolean("doNotSave") || mCacheDirectory != null) {
                 String filePath = writeStreamToFile(imageStream);
                 File imageFile = new File(filePath);
                 String fileUri = Uri.fromFile(imageFile).toString();
@@ -125,7 +130,7 @@ public class ResolveTakenPictureAsyncTask extends AsyncTask<Void, Void, Writable
 
             // Write base64-encoded image to the response if requested
             if (mOptions.hasKey("base64") && mOptions.getBoolean("base64")) {
-                response.putString("base64", Base64.encodeToString(imageStream.toByteArray(), Base64.DEFAULT));
+                response.putString("base64", Base64.encodeToString(imageStream.toByteArray(), Base64.NO_WRAP));
             }
 
             // Cleanup

@@ -3,22 +3,23 @@ package org.reactnative.facedetector.tasks;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.support.media.ExifInterface;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.support.media.ExifInterface;
 import android.util.Log;
 import android.util.SparseArray;
 
-import org.reactnative.facedetector.RNFaceDetector;
-import org.reactnative.frame.RNFrame;
-import org.reactnative.frame.RNFrameFactory;
-import org.reactnative.facedetector.FaceDetectorUtils;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
 import com.google.android.gms.vision.face.Face;
+
+import org.reactnative.facedetector.FaceDetectorUtils;
+import org.reactnative.facedetector.RNFaceDetector;
+import org.reactnative.frame.RNFrame;
+import org.reactnative.frame.RNFrameFactory;
 
 import java.io.File;
 import java.io.IOException;

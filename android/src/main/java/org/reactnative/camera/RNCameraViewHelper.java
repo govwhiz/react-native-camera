@@ -9,6 +9,7 @@ import android.os.Build;
 import android.support.media.ExifInterface;
 import android.util.SparseArray;
 import android.view.ViewGroup;
+
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.ReactContext;
 import com.facebook.react.bridge.WritableMap;
@@ -18,9 +19,19 @@ import com.google.android.gms.vision.barcode.Barcode;
 import com.google.android.gms.vision.face.Face;
 import com.google.android.gms.vision.text.TextBlock;
 import com.google.zxing.Result;
-import org.reactnative.camera.events.*;
-import org.reactnative.camera.utils.ImageDimensions;
+
 import org.reactnative.barcodedetector.RNBarcodeDetector;
+import org.reactnative.camera.events.BarCodeReadEvent;
+import org.reactnative.camera.events.BarcodeDetectionErrorEvent;
+import org.reactnative.camera.events.BarcodesDetectedEvent;
+import org.reactnative.camera.events.CameraMountErrorEvent;
+import org.reactnative.camera.events.CameraReadyEvent;
+import org.reactnative.camera.events.FaceDetectionErrorEvent;
+import org.reactnative.camera.events.FacesDetectedEvent;
+import org.reactnative.camera.events.PictureSavedEvent;
+import org.reactnative.camera.events.PictureTakenEvent;
+import org.reactnative.camera.events.TextRecognizedEvent;
+import org.reactnative.camera.utils.ImageDimensions;
 import org.reactnative.facedetector.RNFaceDetector;
 
 import java.text.SimpleDateFormat;

@@ -18,6 +18,7 @@ package com.google.android.cameraview;
 
 import android.app.Activity;
 import android.content.Context;
+import android.graphics.SurfaceTexture;
 import android.media.CamcorderProfile;
 import android.os.Build;
 import android.os.Parcel;
@@ -31,7 +32,6 @@ import android.support.v4.view.ViewCompat;
 import android.util.AttributeSet;
 import android.view.View;
 import android.widget.FrameLayout;
-import android.graphics.SurfaceTexture;
 
 import com.facebook.react.bridge.ReadableMap;
 
@@ -108,7 +108,7 @@ public class CameraView extends FrameLayout {
         // Internal setup
         final PreviewImpl preview = createPreviewImpl(context);
         mCallbacks = new CallbackBridge();
-        if (fallbackToOldApi || Build.VERSION.SDK_INT < 21) {
+        if (fallbackToOldApi) {
             mImpl = new Camera1(mCallbacks, preview);
         } else if (Build.VERSION.SDK_INT < 23) {
             mImpl = new Camera2(mCallbacks, preview, context);
@@ -128,13 +128,7 @@ public class CameraView extends FrameLayout {
 
     @NonNull
     private PreviewImpl createPreviewImpl(Context context) {
-        PreviewImpl preview;
-        if (Build.VERSION.SDK_INT < 14) {
-            preview = new SurfaceViewPreview(context, this);
-        } else {
-            preview = new TextureViewPreview(context, this);
-        }
-        return preview;
+        return new TextureViewPreview(context, this);
     }
 
     @Override

@@ -3,8 +3,9 @@ package org.reactnative.frame;
 import android.graphics.Bitmap;
 import android.graphics.ImageFormat;
 
-import org.reactnative.camera.utils.ImageDimensions;
 import com.google.android.gms.vision.Frame;
+
+import org.reactnative.camera.utils.ImageDimensions;
 
 import java.nio.ByteBuffer;
 

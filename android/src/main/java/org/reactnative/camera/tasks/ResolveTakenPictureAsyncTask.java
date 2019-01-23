@@ -53,13 +53,13 @@ public class ResolveTakenPictureAsyncTask extends AsyncTask<Void, Void, Writable
         response.putInt("deviceOrientation", mDeviceOrientation);
         response.putInt("pictureOrientation", mOptions.hasKey("orientation") ? mOptions.getInt("orientation") : mDeviceOrientation);
 
-        FileOutputStream fOut=null;
+        FileOutputStream fOut = null;
         if (mOptions.hasKey("skipProcessing")) {
             try {
                 // Prepare file output
                 File imageFile = new File(RNFileUtils.getOutputFilePath(mCacheDirectory, ".jpg"));
                 imageFile.createNewFile();
-                 fOut = new FileOutputStream(imageFile);
+                fOut = new FileOutputStream(imageFile);
 
                 // Save byte array (it is already a JPEG)
                 fOut.write(mImageData);
@@ -74,8 +74,8 @@ public class ResolveTakenPictureAsyncTask extends AsyncTask<Void, Void, Writable
             } catch (IOException e) {
                 mPromise.reject(ERROR_TAG, "An unknown I/O exception has occurred.", e);
                 e.printStackTrace();
-            }finally {
-                if (fOut!=null){
+            } finally {
+                if (fOut != null) {
                     try {
                         fOut.close();
                     } catch (IOException e) {
@@ -137,8 +137,6 @@ public class ResolveTakenPictureAsyncTask extends AsyncTask<Void, Void, Writable
                 response.putString("uri", fileUri);
             }
 
-            }
-
             // Write base64-encoded image to the response if requested
             if (mOptions.hasKey("base64") && mOptions.getBoolean("base64")) {
                 response.putString("base64", Base64.encodeToString(imageStream.toByteArray(), Base64.DEFAULT));
@@ -197,15 +195,15 @@ public class ResolveTakenPictureAsyncTask extends AsyncTask<Void, Void, Writable
     private int getImageRotation(int orientation) {
         int rotationDegrees = 0;
         switch (orientation) {
-        case ExifInterface.ORIENTATION_ROTATE_90:
-            rotationDegrees = 90;
-            break;
-        case ExifInterface.ORIENTATION_ROTATE_180:
-            rotationDegrees = 180;
-            break;
-        case ExifInterface.ORIENTATION_ROTATE_270:
-            rotationDegrees = 270;
-            break;
+            case ExifInterface.ORIENTATION_ROTATE_90:
+                rotationDegrees = 90;
+                break;
+            case ExifInterface.ORIENTATION_ROTATE_180:
+                rotationDegrees = 180;
+                break;
+            case ExifInterface.ORIENTATION_ROTATE_270:
+                rotationDegrees = 270;
+                break;
         }
         return rotationDegrees;
     }

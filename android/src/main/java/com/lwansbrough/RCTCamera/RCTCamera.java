@@ -4,7 +4,6 @@
 
 package com.lwansbrough.RCTCamera;
 
-import android.graphics.drawable.GradientDrawable;
 import android.hardware.Camera;
 import android.media.CamcorderProfile;
 import android.util.Log;
@@ -12,7 +11,6 @@ import android.util.Log;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.lang.Math;
 
 public class RCTCamera {
     private static RCTCamera ourInstance;

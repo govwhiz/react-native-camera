@@ -2,7 +2,6 @@ package org.reactnative.camera.events;
 
 import android.support.v4.util.Pools;
 
-import org.reactnative.camera.CameraViewManager;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
@@ -11,7 +10,8 @@ import com.facebook.react.uimanager.events.RCTEventEmitter;
 import com.google.zxing.Result;
 import com.google.zxing.ResultPoint;
 
-import java.util.Date;
+import org.reactnative.camera.CameraViewManager;
+
 import java.util.Formatter;
 
 public class BarCodeReadEvent extends Event<BarCodeReadEvent> {

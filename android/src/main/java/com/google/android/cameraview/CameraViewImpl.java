@@ -16,9 +16,9 @@
 
 package com.google.android.cameraview;
 
+import android.graphics.SurfaceTexture;
 import android.media.CamcorderProfile;
 import android.view.View;
-import android.graphics.SurfaceTexture;
 
 import com.facebook.react.bridge.ReadableMap;
 

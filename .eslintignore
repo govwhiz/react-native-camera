@@ -1,15 +1,13 @@
 # Created by .ignore support plugin (hsz.mobi)
-/polyfills.js
-/flow-typed/
-/helpers/
-/compiled_js/
-/app/native/realm/RealmUtils.js
 
 # IntelliJ project files
 .idea
 
 node_modules
+android
+ios
+.github
+docs
+postinstall_project
+types
 
-/App.js
-/gulpfile.js
-/types/flow-libs/

@@ -1,6 +1,7 @@
 package org.reactnative.camera;
 
 import android.support.annotation.Nullable;
+
 import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.common.MapBuilder;
 import com.facebook.react.uimanager.ThemedReactContext;

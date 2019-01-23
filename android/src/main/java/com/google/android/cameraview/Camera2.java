@@ -34,12 +34,12 @@ import android.media.CamcorderProfile;
 import android.media.Image;
 import android.media.ImageReader;
 import android.media.MediaRecorder;
+import android.os.Handler;
+import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.util.Log;
 import android.util.SparseIntArray;
 import android.view.Surface;
-import android.os.Handler;
-import android.os.Looper;
 
 import com.facebook.react.bridge.ReadableMap;
 
@@ -816,8 +816,7 @@ class Camera2 extends CameraViewImpl implements MediaRecorder.OnInfoListener, Me
     @Override
     public void setPreviewTexture(SurfaceTexture surfaceTexture) {
         if (surfaceTexture != null) {
-            Surface previewSurface = new Surface(surfaceTexture);
-            mPreviewSurface = previewSurface;
+            mPreviewSurface = new Surface(surfaceTexture);
         } else {
             mPreviewSurface = null;
         }

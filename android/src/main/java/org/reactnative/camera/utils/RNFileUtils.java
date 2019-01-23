@@ -1,8 +1,6 @@
 package org.reactnative.camera.utils;
 
-import android.content.Context;
 import android.net.Uri;
-
 
 import java.io.File;
 import java.io.IOException;

@@ -2,14 +2,16 @@ package org.reactnative.camera.events;
 
 import android.support.v4.util.Pools;
 import android.util.SparseArray;
+
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.uimanager.events.Event;
 import com.facebook.react.uimanager.events.RCTEventEmitter;
 import com.google.android.gms.vision.barcode.Barcode;
-import org.reactnative.camera.CameraViewManager;
+
 import org.reactnative.barcodedetector.BarcodeFormatUtils;
+import org.reactnative.camera.CameraViewManager;
 
 public class BarcodesDetectedEvent extends Event<BarcodesDetectedEvent> {
 

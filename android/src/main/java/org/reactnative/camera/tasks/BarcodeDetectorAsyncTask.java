@@ -1,10 +1,12 @@
 package org.reactnative.camera.tasks;
 
 import android.util.SparseArray;
+
 import com.google.android.gms.vision.barcode.Barcode;
+
+import org.reactnative.barcodedetector.RNBarcodeDetector;
 import org.reactnative.frame.RNFrame;
 import org.reactnative.frame.RNFrameFactory;
-import org.reactnative.barcodedetector.RNBarcodeDetector;
 
 public class BarcodeDetectorAsyncTask extends android.os.AsyncTask<Void, Void, SparseArray<Barcode>> {
 

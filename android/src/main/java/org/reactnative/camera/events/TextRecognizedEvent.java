@@ -14,6 +14,7 @@ import com.google.android.cameraview.CameraView;
 import com.google.android.gms.vision.text.Line;
 import com.google.android.gms.vision.text.Text;
 import com.google.android.gms.vision.text.TextBlock;
+
 import org.reactnative.camera.CameraViewManager;
 import org.reactnative.camera.utils.ImageDimensions;
 import org.reactnative.facedetector.FaceDetectorUtils;

@@ -6,9 +6,11 @@
 package com.lwansbrough.RCTCamera;
 
 import android.content.ContentValues;
-import android.content.res.Configuration;
 import android.hardware.Camera;
-import android.media.*;
+import android.media.CamcorderProfile;
+import android.media.MediaActionSound;
+import android.media.MediaRecorder;
+import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Environment;
@@ -26,7 +28,11 @@ import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.bridge.WritableNativeMap;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;

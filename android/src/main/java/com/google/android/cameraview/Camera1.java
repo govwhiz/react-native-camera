@@ -16,7 +16,6 @@
 
 package com.google.android.cameraview;
 
-import android.annotation.SuppressLint;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.media.CamcorderProfile;
@@ -37,11 +36,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 @SuppressWarnings("deprecation")
 class Camera1 extends CameraViewImpl implements MediaRecorder.OnInfoListener,
-                                                MediaRecorder.OnErrorListener, Camera.PreviewCallback {
+        MediaRecorder.OnErrorListener, Camera.PreviewCallback {
 
     private static final int INVALID_CAMERA_ID = -1;
 
     private static final SparseArrayCompat<String> FLASH_MODES = new SparseArrayCompat<>();
+    private static final SparseArrayCompat<String> WB_MODES = new SparseArrayCompat<>();
 
     static {
         FLASH_MODES.put(Constants.FLASH_OFF, Camera.Parameters.FLASH_MODE_OFF);
@@ -51,39 +51,26 @@ class Camera1 extends CameraViewImpl implements MediaRecorder.OnInfoListener,
         FLASH_MODES.put(Constants.FLASH_RED_EYE, Camera.Parameters.FLASH_MODE_RED_EYE);
     }
 
-    private static final SparseArrayCompat<String> WB_MODES = new SparseArrayCompat<>();
-
     static {
-      WB_MODES.put(Constants.WB_AUTO, Camera.Parameters.WHITE_BALANCE_AUTO);
-      WB_MODES.put(Constants.WB_CLOUDY, Camera.Parameters.WHITE_BALANCE_CLOUDY_DAYLIGHT);
-      WB_MODES.put(Constants.WB_SUNNY, Camera.Parameters.WHITE_BALANCE_DAYLIGHT);
-      WB_MODES.put(Constants.WB_SHADOW, Camera.Parameters.WHITE_BALANCE_SHADE);
-      WB_MODES.put(Constants.WB_FLUORESCENT, Camera.Parameters.WHITE_BALANCE_FLUORESCENT);
-      WB_MODES.put(Constants.WB_INCANDESCENT, Camera.Parameters.WHITE_BALANCE_INCANDESCENT);
+        WB_MODES.put(Constants.WB_AUTO, Camera.Parameters.WHITE_BALANCE_AUTO);
+        WB_MODES.put(Constants.WB_CLOUDY, Camera.Parameters.WHITE_BALANCE_CLOUDY_DAYLIGHT);
+        WB_MODES.put(Constants.WB_SUNNY, Camera.Parameters.WHITE_BALANCE_DAYLIGHT);
+        WB_MODES.put(Constants.WB_SHADOW, Camera.Parameters.WHITE_BALANCE_SHADE);
+        WB_MODES.put(Constants.WB_FLUORESCENT, Camera.Parameters.WHITE_BALANCE_FLUORESCENT);
+        WB_MODES.put(Constants.WB_INCANDESCENT, Camera.Parameters.WHITE_BALANCE_INCANDESCENT);
     }
 
-    private int mCameraId;
-
     private final AtomicBoolean isPictureCaptureInProgress = new AtomicBoolean(false);
-
-    Camera mCamera;
-
-    private Camera.Parameters mCameraParameters;
-
     private final Camera.CameraInfo mCameraInfo = new Camera.CameraInfo();
-
-    private MediaRecorder mMediaRecorder;
-
-    private String mVideoPath;
-
-    private boolean mIsRecording;
-
     private final SizeMap mPreviewSizes = new SizeMap();
-                                                    
-    private boolean mIsPreviewActive = false;
-
     private final SizeMap mPictureSizes = new SizeMap();
-                                                    
+    Camera mCamera;
+    private int mCameraId;
+    private Camera.Parameters mCameraParameters;
+    private MediaRecorder mMediaRecorder;
+    private String mVideoPath;
+    private boolean mIsRecording;
+    private boolean mIsPreviewActive = false;
     private Size mPictureSize;
 
     private AspectRatio mAspectRatio;
@@ -124,7 +111,7 @@ class Camera1 extends CameraViewImpl implements MediaRecorder.OnInfoListener,
 
             @Override
             public void onSurfaceDestroyed() {
-              stop();
+                stop();
             }
         });
     }
@@ -166,14 +153,12 @@ class Camera1 extends CameraViewImpl implements MediaRecorder.OnInfoListener,
         releaseCamera();
     }
 
-    // Suppresses Camera#setPreviewTexture
-    @SuppressLint("NewApi")
-    void setUpPreview() {
+    private void setUpPreview() {
         try {
             if (mPreviewTexture != null) {
                 mCamera.setPreviewTexture(mPreviewTexture);
             } else if (mPreview.getOutputClass() == SurfaceHolder.class) {
-                final boolean needsToStopPreview = mShowingPreview && Build.VERSION.SDK_INT < 14;
+                final boolean needsToStopPreview = false;
                 if (needsToStopPreview) {
                     mCamera.stopPreview();
                     mIsPreviewActive = false;
@@ -197,7 +182,7 @@ class Camera1 extends CameraViewImpl implements MediaRecorder.OnInfoListener,
             mCamera.setPreviewCallback(this);
         }
     }
-                                                    
+
     @Override
     public void resumePreview() {
         startCameraPreview();
@@ -215,6 +200,11 @@ class Camera1 extends CameraViewImpl implements MediaRecorder.OnInfoListener,
     }
 
     @Override
+    int getFacing() {
+        return mFacing;
+    }
+
+    @Override
     void setFacing(int facing) {
         if (mFacing == facing) {
             return;
@@ -227,11 +217,6 @@ class Camera1 extends CameraViewImpl implements MediaRecorder.OnInfoListener,
     }
 
     @Override
-    int getFacing() {
-        return mFacing;
-    }
-
-    @Override
     Set<AspectRatio> getSupportedAspectRatios() {
         SizeMap idealAspectRatios = mPreviewSizes;
         for (AspectRatio aspectRatio : idealAspectRatios.ratios()) {
@@ -241,35 +226,34 @@ class Camera1 extends CameraViewImpl implements MediaRecorder.OnInfoListener,
         }
         return idealAspectRatios.ratios();
     }
-                                                    
+
     @Override
     SortedSet<Size> getAvailablePictureSizes(AspectRatio ratio) {
         return mPictureSizes.sizes(ratio);
     }
-    
+
+    @Override
+    Size getPictureSize() {
+        return mPictureSize;
+    }
+
     @Override
     void setPictureSize(Size size) {
         if (size == null) {
             if (mAspectRatio == null) {
                 return;
             }
-          SortedSet<Size> sizes = mPictureSizes.sizes(mAspectRatio);
-          if(sizes != null && !sizes.isEmpty())
-          {
-            mPictureSize = sizes.last();
-          }
+            SortedSet<Size> sizes = mPictureSizes.sizes(mAspectRatio);
+            if (sizes != null && !sizes.isEmpty()) {
+                mPictureSize = sizes.last();
+            }
         } else {
-          mPictureSize = size;
+            mPictureSize = size;
         }
         if (mCameraParameters != null && mCamera != null) {
             mCameraParameters.setPictureSize(mPictureSize.getWidth(), mPictureSize.getHeight());
             mCamera.setParameters(mCameraParameters);
         }
-    }
-    
-    @Override
-    Size getPictureSize() {
-        return mPictureSize;
     }
 
     @Override
@@ -297,6 +281,15 @@ class Camera1 extends CameraViewImpl implements MediaRecorder.OnInfoListener,
     }
 
     @Override
+    boolean getAutoFocus() {
+        if (!isCameraOpened()) {
+            return mAutoFocus;
+        }
+        String focusMode = mCameraParameters.getFocusMode();
+        return focusMode != null && focusMode.contains("continuous");
+    }
+
+    @Override
     void setAutoFocus(boolean autoFocus) {
         if (mAutoFocus == autoFocus) {
             return;
@@ -307,12 +300,8 @@ class Camera1 extends CameraViewImpl implements MediaRecorder.OnInfoListener,
     }
 
     @Override
-    boolean getAutoFocus() {
-        if (!isCameraOpened()) {
-            return mAutoFocus;
-        }
-        String focusMode = mCameraParameters.getFocusMode();
-        return focusMode != null && focusMode.contains("continuous");
+    int getFlash() {
+        return mFlash;
     }
 
     @Override
@@ -326,8 +315,8 @@ class Camera1 extends CameraViewImpl implements MediaRecorder.OnInfoListener,
     }
 
     @Override
-    int getFlash() {
-        return mFlash;
+    float getFocusDepth() {
+        return 0;
     }
 
     @Override
@@ -336,8 +325,8 @@ class Camera1 extends CameraViewImpl implements MediaRecorder.OnInfoListener,
     }
 
     @Override
-    float getFocusDepth() {
-        return 0;
+    float getZoom() {
+        return mZoom;
     }
 
     @Override
@@ -351,8 +340,8 @@ class Camera1 extends CameraViewImpl implements MediaRecorder.OnInfoListener,
     }
 
     @Override
-    float getZoom() {
-        return mZoom;
+    public int getWhiteBalance() {
+        return mWhiteBalance;
     }
 
     @Override
@@ -366,8 +355,8 @@ class Camera1 extends CameraViewImpl implements MediaRecorder.OnInfoListener,
     }
 
     @Override
-    public int getWhiteBalance() {
-        return mWhiteBalance;
+    boolean getScanning() {
+        return mIsScanning;
     }
 
     @Override
@@ -376,11 +365,6 @@ class Camera1 extends CameraViewImpl implements MediaRecorder.OnInfoListener,
             return;
         }
         setScanningInternal(isScanning);
-    }
-
-    @Override
-    boolean getScanning() {
-        return mIsScanning;
     }
 
     @Override
@@ -406,7 +390,7 @@ class Camera1 extends CameraViewImpl implements MediaRecorder.OnInfoListener,
     }
 
     int orientationEnumToRotation(int orientation) {
-        switch(orientation) {
+        switch (orientation) {
             case Constants.ORIENTATION_UP:
                 return 0;
             case Constants.ORIENTATION_DOWN:
@@ -532,7 +516,7 @@ class Camera1 extends CameraViewImpl implements MediaRecorder.OnInfoListener,
         if (isCameraOpened() && mOrientation == Constants.ORIENTATION_AUTO) {
             mCameraParameters.setRotation(calcCameraRotation(deviceOrientation));
             mCamera.setParameters(mCameraParameters);
-         }
+        }
     }
 
     @Override
@@ -695,9 +679,9 @@ class Camera1 extends CameraViewImpl implements MediaRecorder.OnInfoListener,
     /**
      * Calculate display orientation
      * https://developer.android.com/reference/android/hardware/Camera.html#setDisplayOrientation(int)
-     *
+     * <p>
      * This calculation is used for orienting the preview
-     *
+     * <p>
      * Note: This is not the same calculation as the camera rotation
      *
      * @param screenOrientationDegrees Screen orientation in degrees
@@ -713,22 +697,22 @@ class Camera1 extends CameraViewImpl implements MediaRecorder.OnInfoListener,
 
     /**
      * Calculate camera rotation
-     *
+     * <p>
      * This calculation is applied to the output JPEG either via Exif Orientation tag
      * or by actually transforming the bitmap. (Determined by vendor camera API implementation)
-     *
+     * <p>
      * Note: This is not the same calculation as the display orientation
      *
      * @param screenOrientationDegrees Screen orientation in degrees
      * @return Number of degrees to rotate image in order for it to view correctly.
      */
     private int calcCameraRotation(int screenOrientationDegrees) {
-       if (mCameraInfo.facing == Camera.CameraInfo.CAMERA_FACING_BACK) {
-           return (mCameraInfo.orientation + screenOrientationDegrees) % 360;
-       }
-       // back-facing
-       final int landscapeFlip = isLandscape(screenOrientationDegrees) ? 180 : 0;
-       return (mCameraInfo.orientation + screenOrientationDegrees + landscapeFlip) % 360;
+        if (mCameraInfo.facing == Camera.CameraInfo.CAMERA_FACING_BACK) {
+            return (mCameraInfo.orientation + screenOrientationDegrees) % 360;
+        }
+        // back-facing
+        final int landscapeFlip = isLandscape(screenOrientationDegrees) ? 180 : 0;
+        return (mCameraInfo.orientation + screenOrientationDegrees + landscapeFlip) % 360;
     }
 
     /**
@@ -919,8 +903,8 @@ class Camera1 extends CameraViewImpl implements MediaRecorder.OnInfoListener,
 
     @Override
     public void onInfo(MediaRecorder mr, int what, int extra) {
-        if ( what == MediaRecorder.MEDIA_RECORDER_INFO_MAX_DURATION_REACHED ||
-              what == MediaRecorder.MEDIA_RECORDER_INFO_MAX_FILESIZE_REACHED) {
+        if (what == MediaRecorder.MEDIA_RECORDER_INFO_MAX_DURATION_REACHED ||
+                what == MediaRecorder.MEDIA_RECORDER_INFO_MAX_FILESIZE_REACHED) {
             stopRecording();
         }
     }

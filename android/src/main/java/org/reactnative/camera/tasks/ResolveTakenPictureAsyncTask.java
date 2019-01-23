@@ -30,13 +30,15 @@ public class ResolveTakenPictureAsyncTask extends AsyncTask<Void, Void, Writable
     private ReadableMap mOptions;
     private File mCacheDirectory;
     private Bitmap mBitmap;
+    private int mDeviceOrientation;
     private PictureSavedDelegate mPictureSavedDelegate;
 
-    public ResolveTakenPictureAsyncTask(byte[] imageData, Promise promise, ReadableMap options, File cacheDirectory, PictureSavedDelegate delegate) {
+    public ResolveTakenPictureAsyncTask(byte[] imageData, Promise promise, ReadableMap options, File cacheDirectory, int deviceOrientation, PictureSavedDelegate delegate) {
         mPromise = promise;
         mOptions = options;
         mImageData = imageData;
         mCacheDirectory = cacheDirectory;
+        mDeviceOrientation = deviceOrientation;
         mPictureSavedDelegate = delegate;
     }
 
@@ -48,6 +50,9 @@ public class ResolveTakenPictureAsyncTask extends AsyncTask<Void, Void, Writable
     protected WritableMap doInBackground(Void... voids) {
         WritableMap response = Arguments.createMap();
         ByteArrayInputStream inputStream = null;
+        response.putInt("deviceOrientation", mDeviceOrientation);
+        response.putInt("pictureOrientation", mOptions.hasKey("orientation") ? mOptions.getInt("orientation") : mDeviceOrientation);
+
         FileOutputStream fOut=null;
         if (mOptions.hasKey("skipProcessing")) {
             try {
@@ -124,14 +129,13 @@ public class ResolveTakenPictureAsyncTask extends AsyncTask<Void, Void, Writable
             ByteArrayOutputStream imageStream = new ByteArrayOutputStream();
             mBitmap.compress(Bitmap.CompressFormat.JPEG, getQuality(), imageStream);
 
-            if (!mOptions.hasKey("doNotSave") || !mOptions.getBoolean("doNotSave")) {
-                if(mCacheDirectory != null){
-                    // Write compressed image to file in cache directory
-                    String filePath = writeStreamToFile(imageStream);
-                    File imageFile = new File(filePath);
-                    String fileUri = Uri.fromFile(imageFile).toString();
-                    response.putString("uri", fileUri);
-                }
+            // Write compressed image to file in cache directory unless otherwise specified
+            if (!mOptions.hasKey("doNotSave") || !mOptions.getBoolean("doNotSave") || mCacheDirectory != null) {
+                String filePath = writeStreamToFile(imageStream);
+                File imageFile = new File(filePath);
+                String fileUri = Uri.fromFile(imageFile).toString();
+                response.putString("uri", fileUri);
+            }
 
             }
 
